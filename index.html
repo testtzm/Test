@@ -1,0 +1,982 @@
+<title>Heenim Catch</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Gothic+A1:wght@400;700;900&display=swap">
+<link rel="manifest" href="manifest.json">
+<style>
+  :root{
+    --ink:#05071a;
+    --deep:#0d1746;
+    --night:#0d1746;
+    --sapphire:#2f6fe8;
+    --pearl:#8ccdff;
+    --pearl-soft:#c8e6ff;
+    --magenta:#ff3d8a;
+    --gold:#ffc93c;
+    --cream:#fff4e6;
+    --shadow:rgba(3,6,28,.55);
+    color-scheme:dark;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0;
+    background:var(--ink);
+    color:var(--cream);
+    font-family:"Gothic A1","Helvetica Neue",Arial,sans-serif;
+    overscroll-behavior:none;
+    -webkit-user-select:none;user-select:none;
+    -webkit-tap-highlight-color:transparent;
+  }
+
+  /* ---- stage ---------------------------------------------------- */
+  #stage{
+    position:relative;
+    height:100%;
+    width:100%;
+    max-width:560px;
+    margin:0 auto;
+    overflow:hidden;
+    background:
+      radial-gradient(120% 70% at 50% 0%, #1b2f7a 0%, #0b123c 45%, var(--ink) 100%);
+    background-color:#0a1038;
+    touch-action:none;
+  }
+  canvas{display:block;width:100%;height:100%}
+
+  /* ---- hud ------------------------------------------------------ */
+  #hud{
+    position:absolute;inset:0 0 auto 0;
+    padding:calc(10px + env(safe-area-inset-top,0px)) 16px 0;
+    display:flex;flex-direction:column;gap:6px;
+    pointer-events:none;
+  }
+  .hud-row{display:flex;align-items:center;justify-content:space-between;gap:10px}
+  .hud-row:first-child{padding-right:80px}
+  #hud[hidden],#pauseBtn[hidden]{display:none!important}
+  .plate{
+    background:rgba(6,12,44,.62);
+    border:1px solid rgba(140,205,255,.28);
+    border-radius:10px;
+    padding:5px 10px;
+    backdrop-filter:blur(6px);
+  }
+  .label{
+    font-size:9px;letter-spacing:.18em;text-transform:uppercase;
+    color:var(--pearl);opacity:.75;font-weight:700;line-height:1;
+  }
+  #score{
+    font-family:"Black Han Sans","Gothic A1",sans-serif;
+    font-size:26px;line-height:1;letter-spacing:.02em;
+    font-variant-numeric:tabular-nums;color:var(--cream);
+  }
+  #stageName{
+    font-size:11px;font-weight:900;letter-spacing:.06em;
+    color:var(--pearl-soft);text-align:center;
+  }
+  #lives{font-size:17px;letter-spacing:2px;line-height:1}
+  #comboChip{
+    align-self:flex-start;
+    font-family:"Black Han Sans",sans-serif;
+    font-size:15px;color:var(--ink);
+    background:linear-gradient(100deg,var(--gold),#ffe48a);
+    border-radius:999px;padding:3px 12px;
+    box-shadow:0 3px 0 rgba(160,110,0,.55);
+    transform-origin:left center;
+    transition:transform .12s ease-out,opacity .2s;
+  }
+  #comboChip[hidden]{display:none!important}
+  #powerBar{
+    height:6px;border-radius:99px;overflow:hidden;
+    background:rgba(255,255,255,.14);
+    border:1px solid rgba(255,61,138,.5);
+  }
+  #powerBar > i{
+    display:block;height:100%;width:100%;
+    background:linear-gradient(90deg,var(--magenta),var(--gold));
+    transform-origin:left center;
+  }
+
+  /* ---- variety-show subtitle ------------------------------------ */
+  #caption{
+    position:absolute;left:0;right:0;
+    bottom:calc(14px + env(safe-area-inset-bottom,0px));
+    text-align:center;padding:0 16px;
+    pointer-events:none;
+  }
+  #caption span{
+    display:inline-block;
+    font-family:"Black Han Sans",sans-serif;
+    font-size:clamp(17px,5.4vw,24px);
+    line-height:1.15;
+    color:var(--cream);
+    -webkit-text-stroke:5px #10163f;
+    paint-order:stroke fill;
+    text-shadow:0 3px 0 rgba(0,0,0,.45);
+    transform:rotate(-1.6deg) scale(.86);
+    opacity:0;
+    transition:opacity .14s ease-out,transform .14s ease-out;
+  }
+  #caption span.on{opacity:1;transform:rotate(-1.6deg) scale(1)}
+  #caption span.gold{color:var(--gold)}
+  #caption span.pink{color:#ffd0e2}
+
+  /* ---- overlays -------------------------------------------------- */
+  .screen{
+    position:absolute;inset:0;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    gap:18px;padding:24px 20px;
+    background:linear-gradient(180deg,rgba(5,8,30,.86),rgba(5,8,30,.95));
+    backdrop-filter:blur(3px);
+    text-align:center;
+  }
+  .screen[hidden]{display:none!important}
+  .eyebrow{
+    font-size:10px;letter-spacing:.34em;text-transform:uppercase;
+    color:var(--pearl);font-weight:700;
+  }
+  h1{
+    font-family:"Black Han Sans",sans-serif;
+    font-weight:400;margin:0;
+    font-size:clamp(46px,15vw,74px);
+    line-height:.88;letter-spacing:.01em;
+    text-wrap:balance;
+    background:linear-gradient(175deg,#ffffff 8%,var(--pearl) 52%,var(--sapphire) 100%);
+    -webkit-background-clip:text;background-clip:text;
+    color:transparent;
+    filter:drop-shadow(0 4px 18px rgba(47,111,232,.55));
+  }
+  h2{
+    font-family:"Black Han Sans",sans-serif;font-weight:400;
+    font-size:clamp(30px,9vw,44px);margin:0;line-height:1;color:var(--cream);
+  }
+  .tagline{
+    margin:0;font-size:13px;font-weight:700;color:var(--pearl-soft);
+    letter-spacing:.02em;max-width:34ch;
+  }
+  .legend{
+    display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:7px 10px;width:100%;max-width:330px;
+  }
+  .legend div{
+    display:flex;align-items:center;gap:7px;
+    background:rgba(24,38,96,.55);
+    border:1px solid rgba(140,205,255,.2);
+    border-radius:9px;padding:7px 9px;
+    font-size:11.5px;font-weight:700;color:var(--pearl-soft);
+    text-align:left;line-height:1.2;
+  }
+  .legend b{font-family:"Black Han Sans",sans-serif;font-weight:400;color:var(--gold);font-size:12px}
+  .legend .em{font-size:17px;line-height:1}
+  .legend .bad{border-color:rgba(255,61,138,.35)}
+  .legend .bad b{color:var(--magenta)}
+
+  button{font-family:inherit;cursor:pointer;border:0;color:inherit}
+  .btn{
+    font-family:"Black Han Sans",sans-serif;
+    font-size:23px;letter-spacing:.04em;
+    color:#081033;
+    background:linear-gradient(170deg,#eaf6ff,var(--pearl) 55%,#54a8f5);
+    padding:13px 42px;border-radius:14px;
+    box-shadow:0 5px 0 #1b4ea8,0 12px 26px rgba(20,60,150,.5);
+    transition:transform .08s ease-out,box-shadow .08s ease-out;
+  }
+  .btn:active{transform:translateY(4px);box-shadow:0 1px 0 #1b4ea8,0 6px 16px rgba(20,60,150,.45)}
+  .btn.pink{background:linear-gradient(170deg,#ffe3ee,#ff86b6 55%,var(--magenta));box-shadow:0 5px 0 #a8145a,0 12px 26px rgba(180,20,90,.45)}
+  .btn.ghost{
+    background:transparent;color:var(--pearl-soft);
+    border:1.5px solid rgba(140,205,255,.45);
+    box-shadow:none;font-size:15px;padding:10px 22px;
+  }
+  .btn.ghost:active{transform:translateY(2px);background:rgba(140,205,255,.12)}
+  .row{display:flex;gap:10px;align-items:center;justify-content:center;flex-wrap:wrap}
+
+  .scoreboard{
+    display:flex;gap:0;width:100%;max-width:330px;
+    background:rgba(24,38,96,.5);
+    border:1px solid rgba(140,205,255,.24);
+    border-radius:14px;overflow:hidden;
+  }
+  .scoreboard div{flex:1;padding:11px 6px}
+  .scoreboard div + div{border-left:1px solid rgba(140,205,255,.18)}
+  .scoreboard strong{
+    display:block;font-family:"Black Han Sans",sans-serif;font-weight:400;
+    font-size:25px;line-height:1.05;color:var(--cream);
+    font-variant-numeric:tabular-nums;margin-top:2px;
+  }
+  .scoreboard .hi strong{color:var(--gold)}
+  #newBest{
+    font-family:"Black Han Sans",sans-serif;color:var(--gold);
+    font-size:15px;letter-spacing:.08em;
+  }
+  #rank{font-size:13px;font-weight:700;color:var(--pearl-soft);max-width:30ch;margin:0}
+  .foot{font-size:10px;color:rgba(200,230,255,.45);font-weight:700;letter-spacing:.04em}
+
+  /* small top-right controls, always tappable */
+  #ctrls{position:absolute;top:calc(8px + env(safe-area-inset-top,0px));right:12px;display:flex;gap:6px;z-index:5}
+  .icon{
+    width:34px;height:34px;border-radius:9px;
+    background:rgba(6,12,44,.6);
+    border:1px solid rgba(140,205,255,.28);
+    font-size:15px;line-height:1;display:grid;place-items:center;
+  }
+  @media (prefers-reduced-motion:reduce){
+    #caption span,.btn{transition:none}
+  }
+</style>
+
+<div id="stage">
+  <canvas id="game"></canvas>
+
+  <div id="hud" aria-hidden="true">
+    <div class="hud-row">
+      <div class="plate">
+        <div class="label">Score</div>
+        <div id="score">0</div>
+      </div>
+      <div class="plate" style="flex:1;max-width:150px">
+        <div class="label" style="text-align:center">Stage</div>
+        <div id="stageName">Trainee Days</div>
+      </div>
+      <div class="plate">
+        <div class="label">Life</div>
+        <div id="lives">❤️❤️❤️</div>
+      </div>
+    </div>
+    <div class="hud-row" style="justify-content:flex-start">
+      <div id="comboChip" hidden>COMBO ×2</div>
+    </div>
+    <div id="powerBar" hidden><i></i></div>
+  </div>
+
+  <div id="ctrls">
+    <button class="icon" id="soundBtn" title="Sound">🔊</button>
+    <button class="icon" id="pauseBtn" title="Pause">⏸</button>
+  </div>
+
+  <div id="caption"><span id="capText"></span></div>
+
+  <!-- title ------------------------------------------------------- -->
+  <section class="screen" id="titleScreen">
+    <div class="eyebrow">Sapphire Blue Fan Game</div>
+    <h1>HEENIM<br>CATCH</h1>
+    <p class="tagline">Catch every sapphire pearl the ELF ocean throws up on stage — and dodge the 5AM schedules.</p>
+    <div class="legend">
+      <div><span class="em">💙</span><span>Sapphire pearl <b>+10</b></span></div>
+      <div><span class="em">📸</span><span>Visual shock <b>+15</b></span></div>
+      <div><span class="em">🎤</span><span>MC mic <b>+25</b></span></div>
+      <div><span class="em">🐱</span><span>Heebum <b>+50</b></span></div>
+      <div><span class="em">⭐</span><span>Heenim Mode <b>×2</b></span></div>
+      <div class="bad"><span class="em">⏰</span><span>Schedule <b>−1 life</b></span></div>
+    </div>
+    <button class="btn" id="playBtn">PLAY</button>
+    <div class="foot">Drag anywhere to move · ← → on a keyboard</div>
+    <div class="foot" id="bestLine">Best 0</div>
+  </section>
+
+  <!-- pause ------------------------------------------------------- -->
+  <section class="screen" id="pauseScreen" hidden>
+    <div class="eyebrow">Backstage Break</div>
+    <h2>잠깐! PAUSED</h2>
+    <button class="btn" id="resumeBtn">RESUME</button>
+    <button class="btn ghost" id="quitBtn">END STAGE</button>
+  </section>
+
+  <!-- game over --------------------------------------------------- -->
+  <section class="screen" id="overScreen" hidden>
+    <div class="eyebrow" id="overEyebrow">Stage Cleared</div>
+    <h2 id="overTitle">아이고~</h2>
+    <p id="rank">Not bad. Heebum has seen better.</p>
+    <div class="scoreboard">
+      <div><div class="label">Score</div><strong id="finalScore">0</strong></div>
+      <div><div class="label">Best combo</div><strong id="finalCombo">0</strong></div>
+      <div class="hi"><div class="label">Best</div><strong id="bestScore">0</strong></div>
+    </div>
+    <div id="newBest" hidden>★ NEW RECORD ★</div>
+    <div class="row">
+      <button class="btn pink" id="againBtn">다시! AGAIN</button>
+      <button class="btn ghost" id="shareBtn">Share score</button>
+    </div>
+    <div class="foot">Made for ELF 💙</div>
+  </section>
+</div>
+
+<script>
+(function(){
+"use strict";
+
+/* ------------------------------------------------------------------ *
+ * setup
+ * ------------------------------------------------------------------ */
+const stage = document.getElementById('stage');
+const cv    = document.getElementById('game');
+const ctx   = cv.getContext('2d');
+const $ = id => document.getElementById(id);
+
+const elScore=$('score'), elLives=$('lives'), elStageName=$('stageName'),
+      elCombo=$('comboChip'), elPower=$('powerBar'), elPowerFill=elPower.firstElementChild,
+      elCapWrap=$('caption'), elCap=$('capText');
+
+const REDUCED = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+let W=0, H=0, S=1, DPR=1;
+function resize(){
+  const r = stage.getBoundingClientRect();
+  W = Math.max(240, r.width);
+  H = Math.max(320, r.height);
+  S = Math.max(.78, Math.min(W/420, 1.45));
+  DPR = Math.min(window.devicePixelRatio || 1, 2.5);
+  cv.width  = Math.round(W*DPR);
+  cv.height = Math.round(H*DPR);
+  ctx.setTransform(DPR,0,0,DPR,0,0);
+  player.y = H - 78*S;
+  player.x = Math.min(Math.max(player.x, 50*S), W-50*S);
+}
+
+/* ------------------------------------------------------------------ *
+ * audio — tiny WebAudio blips, built on first gesture
+ * ------------------------------------------------------------------ */
+let actx=null, soundOn=true;
+try{ soundOn = localStorage.getItem('heenim.sound') !== 'off'; }catch(e){}
+$('soundBtn').textContent = soundOn ? '🔊' : '🔇';
+
+function audio(){
+  if(!actx){
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if(!AC) return null;
+    try{ actx = new AC(); }catch(e){ return null; }
+  }
+  if(actx.state === 'suspended') actx.resume().catch(()=>{});
+  return actx;
+}
+function tone(freq, dur, type, vol, slideTo){
+  if(!soundOn) return;
+  const a = audio(); if(!a) return;
+  const o = a.createOscillator(), g = a.createGain();
+  o.type = type || 'square';
+  o.frequency.setValueAtTime(freq, a.currentTime);
+  if(slideTo) o.frequency.exponentialRampToValueAtTime(slideTo, a.currentTime+dur);
+  g.gain.setValueAtTime(0.0001, a.currentTime);
+  g.gain.exponentialRampToValueAtTime(vol||.12, a.currentTime+0.012);
+  g.gain.exponentialRampToValueAtTime(0.0001, a.currentTime+dur);
+  o.connect(g).connect(a.destination);
+  o.start(); o.stop(a.currentTime+dur+0.02);
+}
+const sfx = {
+  catch:(n)=>tone(520 + Math.min(n,12)*45, .1, 'square', .09),
+  big:()=>{ tone(660,.1,'square',.1); setTimeout(()=>tone(880,.13,'square',.1),70); },
+  star:()=>{ [523,659,784,1047].forEach((f,i)=>setTimeout(()=>tone(f,.14,'triangle',.11),i*65)); },
+  bad:()=>tone(220,.28,'sawtooth',.11,70),
+  over:()=>{ [440,392,330,247].forEach((f,i)=>setTimeout(()=>tone(f,.26,'triangle',.11),i*150)); }
+};
+
+/* ------------------------------------------------------------------ *
+ * content
+ * ------------------------------------------------------------------ */
+const GOOD = [
+  {e:'💙', pts:10, w:44, cap:'Sapphire pearl!',   col:'#8ccdff'},
+  {e:'📸', pts:15, w:24, cap:'Visual shock!',     col:'#fff4e6'},
+  {e:'🎤', pts:25, w:18, cap:'MC of the night!',  col:'#ffc93c'},
+  {e:'🐱', pts:50, w:7,  cap:'Heebum approves!',  col:'#ff3d8a'}
+];
+const BAD = [
+  {e:'⏰', cap:'5AM schedule!'},
+  {e:'📋', cap:'Extra schedule!'},
+  {e:'🦟', cap:'Anti alert!'}
+];
+const STAGES = [
+  'Trainee Days','Debut Stage','Variety King','Lightstick Ocean',
+  'Sapphire Storm','Center of the Universe','Heenim Legend'
+];
+const HYPE = ['Kim Heenim is #1!','Too handsome to drop it!','Nice one, ELF!','Center of the universe!','That was chic!'];
+const RANKS = [
+  [0,    'Backup dancer energy. Heebum has seen better.'],
+  [300,  'Rookie idol. The fanchant is getting louder.'],
+  [800,  'Variety show regular — the subtitles love you.'],
+  [1500, 'Certified visual shock. Screens everywhere.'],
+  [2600, 'MC of the universe. Heenim would allow it.'],
+  [4200, 'Legend tier. Even Heebum stood up for this one.']
+];
+
+/* ------------------------------------------------------------------ *
+ * state
+ * ------------------------------------------------------------------ */
+const player = {x:0, y:0, tx:0, face:0, hop:0};
+let items=[], parts=[], floats=[], crowd=[];
+let score=0, lives=3, combo=0, bestCombo=0, level=0;
+let spawnT=0, heenim=0, invul=0, shake=0, tGlobal=0, starCd=6;
+let mode='title';              // title | play | pause | over
+let best=0;
+try{ best = parseInt(localStorage.getItem('heenim.best')||'0',10)||0; }catch(e){}
+$('bestLine').textContent = 'Best ' + best.toLocaleString();
+
+function saveBest(){ try{ localStorage.setItem('heenim.best', String(best)); }catch(e){} }
+
+/* ------------------------------------------------------------------ *
+ * captions (Korean-variety subtitle bar)
+ * ------------------------------------------------------------------ */
+let capT=0;
+function say(text, tone){
+  elCap.textContent = text;
+  elCap.className = tone || '';
+  void elCap.offsetWidth;
+  elCap.classList.add('on');
+  capT = 1.5;
+}
+function tickCaption(dt){
+  if(capT>0){ capT-=dt; if(capT<=0) elCap.classList.remove('on'); }
+}
+
+/* ------------------------------------------------------------------ *
+ * spawning
+ * ------------------------------------------------------------------ */
+const goodTotal = GOOD.reduce((s,g)=>s+g.w,0);
+function pickGood(){
+  let r = Math.random()*goodTotal;
+  for(const g of GOOD){ r -= g.w; if(r<=0) return g; }
+  return GOOD[0];
+}
+function spawn(){
+  const fallBase = (150 + level*24) * (H/680);
+  const kind = (()=>{
+    if(starCd<=0 && heenim<=0 && Math.random()<.055) return 'star';
+    if(Math.random() < Math.min(.06 + level*.028, .34)) return 'bad';
+    return 'good';
+  })();
+  const pad = 34*S;
+  const it = {
+    x: pad + Math.random()*(W-pad*2),
+    y: -40*S,
+    vy: fallBase*(0.85+Math.random()*0.45),
+    vx: 0,
+    rot: (Math.random()-.5)*.5,
+    spin: (Math.random()-.5)*1.6,
+    size: 38*S,
+    kind
+  };
+  if(kind==='good'){ it.def = pickGood(); }
+  else if(kind==='bad'){ it.def = BAD[(Math.random()*BAD.length)|0]; it.size = 36*S; }
+  else { it.def = {e:'⭐', cap:'HEENIM MODE!'}; it.size = 44*S; it.vy *= .82; starCd = 9; }
+  items.push(it);
+}
+
+/* ------------------------------------------------------------------ *
+ * fx
+ * ------------------------------------------------------------------ */
+function burst(x,y,color,n){
+  if(REDUCED) n = Math.min(n,6);
+  for(let i=0;i<n;i++){
+    const a = Math.random()*Math.PI*2, sp = (60+Math.random()*190)*S;
+    parts.push({x,y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp-40*S,life:.5+Math.random()*.45,t:0,
+                r:(2+Math.random()*3.4)*S,c:color});
+  }
+}
+function floatText(x,y,text,color,big){
+  floats.push({x,y,text,color,t:0,life:.9,big:!!big});
+}
+
+/* ------------------------------------------------------------------ *
+ * game flow
+ * ------------------------------------------------------------------ */
+function reset(){
+  items=[]; parts=[]; floats=[];
+  score=0; lives=3; combo=0; bestCombo=0; level=0;
+  spawnT=.5; heenim=0; invul=0; shake=0; starCd=6;
+  player.x = W/2; player.tx = W/2; player.hop=0;
+  syncHud();
+}
+function showHud(on){
+  $('hud').hidden = !on;
+  $('pauseBtn').hidden = !on;
+}
+function start(){
+  reset();
+  mode='play';
+  showHud(true);
+  $('titleScreen').hidden = true;
+  $('overScreen').hidden  = true;
+  $('pauseScreen').hidden = true;
+  say('여러분~ Let\'s go!', 'gold');
+  audio();
+}
+function pause(){
+  if(mode!=='play') return;
+  mode='pause'; $('pauseScreen').hidden = false;
+}
+function resume(){
+  if(mode!=='pause') return;
+  mode='play'; $('pauseScreen').hidden = true; last = performance.now();
+}
+function gameOver(){
+  mode='over';
+  showHud(false);
+  sfx.over();
+  const isBest = score > best;
+  if(isBest){ best = score; saveBest(); }
+  $('finalScore').textContent = score.toLocaleString();
+  $('finalCombo').textContent = '×' + bestCombo;
+  $('bestScore').textContent  = best.toLocaleString();
+  $('newBest').hidden = !isBest;
+  $('overTitle').textContent  = isBest ? '대박! DAEBAK' : '아이고~ AIGOO';
+  $('overEyebrow').textContent = 'Stage ' + (level+1) + ' · ' + STAGES[Math.min(level, STAGES.length-1)];
+  let rank = RANKS[0][1];
+  for(const [need,text] of RANKS) if(score>=need) rank = text;
+  $('rank').textContent = rank;
+  $('bestLine').textContent = 'Best ' + best.toLocaleString();
+  $('overScreen').hidden = false;
+}
+
+function syncHud(){
+  elScore.textContent = score.toLocaleString();
+  elLives.textContent = '❤️'.repeat(Math.max(0,lives)) || '·';
+  elStageName.textContent = STAGES[Math.min(level, STAGES.length-1)];
+  const mult = multiplier();
+  if(combo >= 3){
+    elCombo.hidden = false;
+    elCombo.textContent = 'COMBO ' + combo + (mult>1 ? '  ×'+mult : '');
+  } else elCombo.hidden = true;
+}
+function multiplier(){ return Math.min(1 + Math.floor(combo/5), 5); }
+
+function addScore(n, x, y, color, big){
+  const gained = Math.round(n * multiplier() * (heenim>0 ? 2 : 1));
+  score += gained;
+  floatText(x, y, '+'+gained, color, big);
+  const newLevel = Math.min(Math.floor(score/450), STAGES.length-1);
+  if(newLevel > level){
+    level = newLevel;
+    say('STAGE UP — ' + STAGES[level], 'gold');
+    burst(W/2, H*0.45, '#ffc93c', 26);
+  }
+  syncHud();
+}
+
+/* ------------------------------------------------------------------ *
+ * update
+ * ------------------------------------------------------------------ */
+function update(dt){
+  tGlobal += dt;
+
+  // crowd lightsticks drifting up
+  if(crowd.length < 26 && Math.random()<dt*14){
+    crowd.push({x:Math.random()*W, y:H+10, sp:(16+Math.random()*30), r:(1.2+Math.random()*2.4)*S, a:.15+Math.random()*.4});
+  }
+  for(let i=crowd.length-1;i>=0;i--){
+    const c = crowd[i];
+    c.y -= c.sp*dt;
+    if(c.y < H*0.3){ crowd.splice(i,1); }
+  }
+
+  if(mode!=='play'){ tickCaption(dt); stepFx(dt); return; }
+
+  // player
+  const lerp = 1 - Math.pow(0.0009, dt);
+  const half = 46*S;
+  player.tx = Math.min(Math.max(player.tx, half), W-half);
+  const dx = player.tx - player.x;
+  player.x += dx * lerp;
+  player.face = Math.max(-1, Math.min(1, dx/ (60*S)));
+  if(player.hop>0) player.hop = Math.max(0, player.hop - dt*3.2);
+
+  if(invul>0) invul -= dt;
+  if(starCd>0) starCd -= dt;
+  if(heenim>0){
+    heenim -= dt;
+    elPower.hidden = false;
+    elPowerFill.style.transform = 'scaleX(' + Math.max(0, heenim/7) + ')';
+    if(heenim<=0){ elPower.hidden = true; say('Heenim Mode over~'); }
+  }
+
+  // spawn
+  spawnT -= dt;
+  if(spawnT<=0){
+    spawn();
+    spawnT = Math.max(.3, .92 - level*.075) * (0.72 + Math.random()*0.6);
+  }
+
+  // items
+  const catchY = player.y - 6*S;
+  for(let i=items.length-1;i>=0;i--){
+    const it = items[i];
+
+    // magnet during heenim mode
+    if(heenim>0 && it.kind!=='bad'){
+      const ddx = player.x - it.x, ddy = catchY - it.y;
+      const d = Math.hypot(ddx,ddy);
+      if(d < 230*S && d>1){
+        it.x += (ddx/d) * 300*S*dt;
+        it.vy += 60*dt;
+      }
+    }
+
+    it.y += it.vy*dt;
+    it.x += it.vx*dt;
+    it.rot += it.spin*dt;
+
+    const hit = it.y > catchY - 26*S && it.y < catchY + 42*S &&
+                Math.abs(it.x - player.x) < half + 8*S;
+
+    if(hit){
+      items.splice(i,1);
+      player.hop = 1;
+      if(it.kind==='good'){
+        combo++; bestCombo = Math.max(bestCombo, combo);
+        addScore(it.def.pts, it.x, it.y, it.def.col, it.def.pts>=25);
+        burst(it.x, it.y, it.def.col, it.def.pts>=50 ? 24 : 12);
+        if(it.def.pts>=25){ sfx.big(); say(it.def.cap, 'gold'); }
+        else { sfx.catch(combo); if(combo>0 && combo%10===0) say(HYPE[(Math.random()*HYPE.length)|0], 'pink'); }
+      } else if(it.kind==='star'){
+        heenim = 7; combo++;
+        sfx.star(); say('HEENIM MODE! ×2', 'pink');
+        burst(it.x, it.y, '#ff3d8a', 34);
+        shake = REDUCED ? 0 : 7;
+        syncHud();
+      } else {
+        if(heenim>0){
+          burst(it.x, it.y, '#ffc93c', 14);
+          floatText(it.x, it.y, 'NOPE', '#ffc93c');
+          sfx.catch(2);
+        } else if(invul<=0){
+          lives--; combo=0; invul=1.3; shake = REDUCED ? 0 : 12;
+          sfx.bad(); say(it.def.cap, 'pink');
+          burst(it.x, it.y, '#ff3d8a', 20);
+          syncHud();
+          if(lives<=0){ gameOver(); return; }
+        }
+      }
+      continue;
+    }
+
+    if(it.y > H + 60*S){
+      items.splice(i,1);
+      if(it.kind==='good' && combo>0){ combo=0; syncHud(); }
+    }
+  }
+
+  stepFx(dt);
+  tickCaption(dt);
+}
+
+function stepFx(dt){
+  for(let i=parts.length-1;i>=0;i--){
+    const p = parts[i];
+    p.t += dt;
+    if(p.t>=p.life){ parts.splice(i,1); continue; }
+    p.vy += 900*dt*S*0.4;
+    p.x += p.vx*dt; p.y += p.vy*dt;
+  }
+  for(let i=floats.length-1;i>=0;i--){
+    const f = floats[i];
+    f.t += dt;
+    if(f.t>=f.life){ floats.splice(i,1); continue; }
+    f.y -= 46*dt*S;
+  }
+  if(shake>0) shake = Math.max(0, shake - dt*26);
+}
+
+/* ------------------------------------------------------------------ *
+ * draw
+ * ------------------------------------------------------------------ */
+function rr(c,x,y,w,h,r){
+  if(c.roundRect){ c.beginPath(); c.roundRect(x,y,w,h,r); return; }
+  c.beginPath();
+  c.moveTo(x+r,y); c.arcTo(x+w,y,x+w,y+h,r); c.arcTo(x+w,y+h,x,y+h,r);
+  c.arcTo(x,y+h,x,y,r); c.arcTo(x,y,x+w,y,r); c.closePath();
+}
+
+function drawBackdrop(){
+  // stage floor glow
+  const g = ctx.createLinearGradient(0, H-190*S, 0, H);
+  g.addColorStop(0, 'rgba(47,111,232,0)');
+  g.addColorStop(1, heenim>0 ? 'rgba(255,61,138,.32)' : 'rgba(47,111,232,.28)');
+  ctx.fillStyle = g;
+  ctx.fillRect(0, H-190*S, W, 190*S);
+
+  // spotlight beams
+  ctx.save();
+  ctx.globalCompositeOperation = 'lighter';
+  for(let i=0;i<2;i++){
+    const sway = Math.sin(tGlobal*0.5 + i*2.2) * W*0.16;
+    const ox = i ? W*0.74 : W*0.26;
+    ctx.beginPath();
+    ctx.moveTo(ox, -20);
+    ctx.lineTo(ox + sway - 78*S, H*0.92);
+    ctx.lineTo(ox + sway + 78*S, H*0.92);
+    ctx.closePath();
+    const bg = ctx.createLinearGradient(0,0,0,H*0.92);
+    bg.addColorStop(0, heenim>0 ? 'rgba(255,61,138,.16)' : 'rgba(140,205,255,.13)');
+    bg.addColorStop(1, 'rgba(140,205,255,0)');
+    ctx.fillStyle = bg;
+    ctx.fill();
+  }
+  ctx.restore();
+
+  // ELF ocean — crowd lightsticks
+  for(const c of crowd){
+    ctx.globalAlpha = c.a * Math.max(0, Math.min(1, (H - c.y)/ (H*0.5)));
+    ctx.fillStyle = heenim>0 ? '#ff9ec4' : '#8ccdff';
+    ctx.beginPath(); ctx.arc(c.x, c.y, c.r, 0, Math.PI*2); ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+}
+
+function drawHeechul(){
+  const x = player.x, y = player.y;
+  const hop = Math.sin(player.hop*Math.PI) * 7*S;
+  const blink = invul>0 && Math.floor(invul*12)%2===0;
+
+  ctx.save();
+  ctx.translate(x, y - hop);
+  ctx.rotate(player.face*0.08);
+  ctx.scale(S, S);
+  if(blink) ctx.globalAlpha = .38;
+
+  // shadow
+  ctx.fillStyle = 'rgba(0,0,0,.35)';
+  ctx.beginPath(); ctx.ellipse(0, 62 + hop/S, 40, 8, 0, 0, Math.PI*2); ctx.fill();
+
+  // legs
+  ctx.fillStyle = '#131a3c';
+  rr(ctx,-17,30,13,30,5); ctx.fill();
+  rr(ctx,4,30,13,30,5);   ctx.fill();
+  ctx.fillStyle = '#f3f6ff';
+  rr(ctx,-19,56,16,7,3); ctx.fill();
+  rr(ctx,3,56,16,7,3);   ctx.fill();
+
+  // jacket
+  const jack = ctx.createLinearGradient(0,-6,0,38);
+  jack.addColorStop(0, heenim>0 ? '#ff5f9e' : '#2f6fe8');
+  jack.addColorStop(1, heenim>0 ? '#b81f63' : '#16337e');
+  ctx.fillStyle = jack;
+  rr(ctx,-26,-16,52,50,13); ctx.fill();
+  // lapels
+  ctx.fillStyle = 'rgba(255,255,255,.85)';
+  ctx.beginPath(); ctx.moveTo(-9,-16); ctx.lineTo(0,4); ctx.lineTo(9,-16); ctx.closePath(); ctx.fill();
+  // shoulder studs
+  ctx.fillStyle = '#ffc93c';
+  ctx.beginPath(); ctx.arc(-20,-8,2.6,0,Math.PI*2); ctx.arc(20,-8,2.6,0,Math.PI*2); ctx.fill();
+
+  // arms holding the bucket
+  ctx.strokeStyle = heenim>0 ? '#ff7fb2' : '#3f7cf0';
+  ctx.lineWidth = 8; ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.moveTo(-22,-2); ctx.lineTo(-40,4); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(22,-2);  ctx.lineTo(40,4);  ctx.stroke();
+
+  // head
+  ctx.fillStyle = '#ffe6d5';
+  ctx.beginPath(); ctx.ellipse(0,-34,18,20,0,0,Math.PI*2); ctx.fill();
+  // ears
+  ctx.beginPath(); ctx.arc(-18,-32,3.4,0,Math.PI*2); ctx.arc(18,-32,3.4,0,Math.PI*2); ctx.fill();
+
+  // hair — long, side-swept, magenta streak
+  ctx.fillStyle = '#16111f';
+  ctx.beginPath();
+  ctx.moveTo(-20,-34);
+  ctx.quadraticCurveTo(-22,-60, 0,-58);
+  ctx.quadraticCurveTo(22,-60, 20,-34);
+  ctx.quadraticCurveTo(14,-46, -2,-44);
+  ctx.quadraticCurveTo(-14,-42, -20,-34);
+  ctx.closePath(); ctx.fill();
+  // side lengths
+  ctx.beginPath(); ctx.moveTo(-20,-38); ctx.quadraticCurveTo(-25,-18,-18,-10);
+  ctx.lineTo(-12,-12); ctx.quadraticCurveTo(-17,-24,-14,-38); ctx.closePath(); ctx.fill();
+  ctx.beginPath(); ctx.moveTo(20,-38); ctx.quadraticCurveTo(25,-18,18,-10);
+  ctx.lineTo(12,-12); ctx.quadraticCurveTo(17,-24,14,-38); ctx.closePath(); ctx.fill();
+  // streak
+  ctx.fillStyle = heenim>0 ? '#ffd24a' : '#ff3d8a';
+  ctx.beginPath(); ctx.moveTo(6,-56); ctx.quadraticCurveTo(16,-52,17,-36);
+  ctx.lineTo(12,-36); ctx.quadraticCurveTo(12,-50,4,-53); ctx.closePath(); ctx.fill();
+
+  // face
+  if(heenim>0){
+    // sunglasses
+    ctx.fillStyle = '#13102a';
+    rr(ctx,-15,-39,30,11,4); ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,.35)';
+    rr(ctx,-12,-37,7,3,1.5); ctx.fill();
+  } else {
+    ctx.fillStyle = '#1a1430';
+    ctx.lineWidth = 2.4; ctx.strokeStyle = '#1a1430';
+    ctx.beginPath(); ctx.arc(-7,-36,3.2,Math.PI*1.05,Math.PI*1.95); ctx.stroke();
+    ctx.beginPath(); ctx.arc(7,-36,3.2,Math.PI*1.05,Math.PI*1.95); ctx.stroke();
+  }
+  // blush
+  ctx.fillStyle = 'rgba(255,120,160,.4)';
+  ctx.beginPath(); ctx.ellipse(-11,-28,4,2.6,0,0,Math.PI*2); ctx.ellipse(11,-28,4,2.6,0,0,Math.PI*2); ctx.fill();
+  // mouth
+  ctx.fillStyle = '#c0325c';
+  const open = player.hop > .25;
+  ctx.beginPath();
+  if(open) ctx.ellipse(0,-24,4.4,5,0,0,Math.PI*2);
+  else ctx.ellipse(0,-25,4.6,2.6,0,0,Math.PI);
+  ctx.fill();
+
+  // catcher bucket
+  const bkt = ctx.createLinearGradient(0,-12,0,18);
+  bkt.addColorStop(0, heenim>0 ? '#ffd0e4' : '#cdeaff');
+  bkt.addColorStop(1, heenim>0 ? '#ff3d8a' : '#2f6fe8');
+  ctx.fillStyle = bkt;
+  ctx.beginPath();
+  ctx.moveTo(-44,2); ctx.lineTo(44,2); ctx.lineTo(33,32); ctx.lineTo(-33,32); ctx.closePath();
+  ctx.fill();
+  // rim
+  ctx.fillStyle = heenim>0 ? '#ffe9a8' : '#eaf6ff';
+  rr(ctx,-46,-2,92,7,3.5); ctx.fill();
+  // star emblem
+  ctx.fillStyle = heenim>0 ? '#fff' : '#ffc93c';
+  star(ctx, 0, 16, 7, 3.2, 5);
+
+  ctx.restore();
+
+  // heenim sparkles
+  if(heenim>0 && !REDUCED && Math.random()<.5){
+    burst(x + (Math.random()-.5)*90*S, y - 30*S + (Math.random()-.5)*40*S, '#ffd24a', 1);
+  }
+}
+
+function star(c,cx,cy,outer,inner,points){
+  c.beginPath();
+  for(let i=0;i<points*2;i++){
+    const r = i%2 ? inner : outer;
+    const a = (Math.PI/points)*i - Math.PI/2;
+    const px = cx + Math.cos(a)*r, py = cy + Math.sin(a)*r;
+    i ? c.lineTo(px,py) : c.moveTo(px,py);
+  }
+  c.closePath(); c.fill();
+}
+
+function draw(){
+  ctx.clearRect(0,0,W,H);
+  ctx.save();
+  if(shake>0){
+    ctx.translate((Math.random()-.5)*shake, (Math.random()-.5)*shake);
+  }
+
+  drawBackdrop();
+
+  // items
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  for(const it of items){
+    ctx.save();
+    ctx.translate(it.x, it.y);
+    ctx.rotate(it.rot);
+    if(it.kind!=='bad'){
+      ctx.shadowColor = it.kind==='star' ? '#ffc93c' : (it.def.col || '#8ccdff');
+      ctx.shadowBlur = 16;
+    }
+    ctx.font = it.size + 'px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif';
+    ctx.fillText(it.def.e, 0, 0);
+    ctx.restore();
+  }
+
+  if(mode!=='title') drawHeechul();
+
+  // particles
+  for(const p of parts){
+    const k = 1 - p.t/p.life;
+    ctx.globalAlpha = Math.max(0, k);
+    ctx.fillStyle = p.c;
+    ctx.beginPath(); ctx.arc(p.x, p.y, p.r*k + 0.6, 0, Math.PI*2); ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+
+  // floating score text
+  for(const f of floats){
+    const k = 1 - f.t/f.life;
+    ctx.globalAlpha = Math.max(0, k);
+    ctx.fillStyle = f.color || '#fff4e6';
+    ctx.font = '400 ' + ((f.big?27:20)*S) + 'px "Black Han Sans","Gothic A1",sans-serif';
+    ctx.lineWidth = 5*S; ctx.strokeStyle = 'rgba(10,16,56,.85)';
+    ctx.strokeText(f.text, f.x, f.y);
+    ctx.fillText(f.text, f.x, f.y);
+  }
+  ctx.globalAlpha = 1;
+  ctx.restore();
+}
+
+/* ------------------------------------------------------------------ *
+ * loop
+ * ------------------------------------------------------------------ */
+let last = performance.now();
+function frame(now){
+  const dt = Math.min(.05, (now - last)/1000);
+  last = now;
+  update(dt);
+  draw();
+  requestAnimationFrame(frame);
+}
+
+/* ------------------------------------------------------------------ *
+ * input
+ * ------------------------------------------------------------------ */
+function pointTo(clientX){
+  const r = stage.getBoundingClientRect();
+  player.tx = clientX - r.left;
+}
+stage.addEventListener('pointerdown', e=>{
+  if(e.target.closest('button')) return;
+  pointTo(e.clientX);
+  if(mode==='play') stage.setPointerCapture?.(e.pointerId);
+});
+stage.addEventListener('pointermove', e=>{
+  if(e.buttons || e.pointerType==='touch') pointTo(e.clientX);
+});
+stage.addEventListener('contextmenu', e=>e.preventDefault());
+
+const keys = {};
+addEventListener('keydown', e=>{
+  if(e.key==='ArrowLeft'||e.key==='ArrowRight'){ keys[e.key]=true; e.preventDefault(); }
+  if(e.key===' '||e.key==='Enter'){
+    if(mode==='title') start();
+    else if(mode==='over') start();
+    e.preventDefault();
+  }
+  if(e.key==='Escape'||e.key==='p'||e.key==='P'){ mode==='play' ? pause() : resume(); }
+});
+addEventListener('keyup', e=>{ keys[e.key]=false; });
+setInterval(()=>{
+  if(mode!=='play') return;
+  const step = 34*S;
+  if(keys.ArrowLeft)  player.tx -= step;
+  if(keys.ArrowRight) player.tx += step;
+}, 40);
+
+$('playBtn').addEventListener('click', start);
+$('againBtn').addEventListener('click', start);
+$('resumeBtn').addEventListener('click', resume);
+$('quitBtn').addEventListener('click', ()=>{ $('pauseScreen').hidden = true; gameOver(); });
+$('pauseBtn').addEventListener('click', ()=>{ mode==='play' ? pause() : resume(); });
+$('soundBtn').addEventListener('click', ()=>{
+  soundOn = !soundOn;
+  $('soundBtn').textContent = soundOn ? '🔊' : '🔇';
+  try{ localStorage.setItem('heenim.sound', soundOn ? 'on' : 'off'); }catch(e){}
+  if(soundOn) sfx.catch(3);
+});
+$('shareBtn').addEventListener('click', async ()=>{
+  const text = 'I scored ' + score.toLocaleString() + ' in Heenim Catch (best combo ×' + bestCombo + '). Beat that, ELF 💙';
+  const data = {title:'Heenim Catch', text, url: location.href};
+  try{
+    if(navigator.share){ await navigator.share(data); return; }
+    await navigator.clipboard.writeText(text + ' ' + location.href);
+    $('shareBtn').textContent = 'Copied!';
+    setTimeout(()=>{ $('shareBtn').textContent = 'Share score'; }, 1600);
+  }catch(e){
+    $('shareBtn').textContent = 'Copy failed';
+    setTimeout(()=>{ $('shareBtn').textContent = 'Share score'; }, 1600);
+  }
+});
+
+addEventListener('resize', resize);
+addEventListener('orientationchange', ()=>setTimeout(resize,120));
+document.addEventListener('visibilitychange', ()=>{ if(document.hidden) pause(); });
+
+/* keep the page state across a live republish, when the host supports it */
+try{
+  window.claude?.hot?.snapshot?.(()=>({score, best}));
+}catch(e){}
+
+resize();
+showHud(false);
+syncHud();
+requestAnimationFrame(frame);
+})();
+</script>

@@ -1,0 +1,13 @@
+{
+  "name": "Heenim Catch",
+  "short_name": "Heenim Catch",
+  "description": "A one-thumb arcade game: catch sapphire pearls, dodge the 5AM schedules.",
+  "start_url": "./index.html",
+  "display": "fullscreen",
+  "orientation": "portrait",
+  "background_color": "#05071a",
+  "theme_color": "#2f6fe8",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}
