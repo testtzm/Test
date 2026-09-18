@@ -1,3 +1,22 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#05071a">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Heenim Catch">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="apple-touch-icon" href="icon.svg">
+<link rel="icon" href="icon.svg">
+<meta name="description" content="A one-thumb arcade game for Super Junior's Kim Heechul: catch the sapphire pearls, dodge the 5AM schedules, and trigger Heenim Mode.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Heenim Catch 💙">
+<meta property="og:description" content="Catch the sapphire pearls, dodge the 5AM schedules. A one-thumb Heechul arcade game — no install, just tap and play.">
+<meta property="og:image" content="https://testtzm.github.io/Test/preview.png">
+<meta property="og:url" content="https://testtzm.github.io/Test/">
+<meta name="twitter:card" content="summary_large_image">
 <title>Heenim Catch</title>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Gothic+A1:wght@400;700;900&display=swap">
@@ -18,6 +37,7 @@
   }
   *{box-sizing:border-box}
   html,body{height:100%}
+  @supports (height:100dvh){ html,body{height:100dvh} }
   body{
     margin:0;
     background:var(--ink);
@@ -223,7 +243,8 @@
     #caption span,.btn{transition:none}
   }
 </style>
-
+</head>
+<body>
 <div id="stage">
   <canvas id="game"></canvas>
 
@@ -980,3 +1001,5 @@ syncHud();
 requestAnimationFrame(frame);
 })();
 </script>
+</body>
+</html>

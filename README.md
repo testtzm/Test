@@ -26,7 +26,12 @@ the schedules get more frequent, from *Trainee Days* all the way to *Heenim Lege
 Your best score is saved in the browser it was played in (`localStorage`), so it
 survives a reload but doesn't travel between devices.
 
-## Run it
+## Play it / share it
+
+**Live:** https://testtzm.github.io/Test/ — a public link, no login and no install.
+Anyone you send it to can just tap and play.
+
+## Run it locally
 
 ```bash
 # just open it
@@ -36,16 +41,20 @@ open index.html
 npx http-server . -p 8080
 ```
 
-## Play it on a phone
+## Put it on a phone home screen
 
-Serve the folder over HTTPS (GitHub Pages works: Settings → Pages → deploy from
-the branch root), open the URL on the phone, and use **Add to Home Screen** —
-`manifest.json` makes it launch fullscreen in portrait with no browser chrome.
+Open the live link on the phone and use **Add to Home Screen** — `manifest.json`
+makes it launch fullscreen in portrait with no browser chrome, like an app.
+
+Deployment is automatic: `.github/workflows/pages.yml` publishes the repository
+root to GitHub Pages on every push to the default branch.
 
 ## Files
 
 - `index.html` — the whole game: styles, canvas renderer, game loop, WebAudio SFX
 - `manifest.json` — PWA metadata for home-screen install
 - `icon.svg` — app icon
+- `preview.png` — link preview shown when the URL is pasted into a chat
+- `.github/workflows/pages.yml` — publishes the site to GitHub Pages
 
 A fan project, made for fun. Not affiliated with Super Junior, Label SJ or SM Entertainment.
