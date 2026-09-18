@@ -31,6 +31,11 @@ survives a reload but doesn't travel between devices.
 **Live:** https://testtzm.github.io/Test/ — a public link, no login and no install.
 Anyone you send it to can just tap and play.
 
+One-time setup, if that link 404s: repository **Settings → Pages → Build and
+deployment → Source: Deploy from a branch**, branch
+`claude/suju-heechul-mobile-game-iuxxmr`, folder `/ (root)`, **Save**. The site
+is live a minute later and republishes on every push.
+
 ## Run it locally
 
 ```bash
@@ -46,8 +51,7 @@ npx http-server . -p 8080
 Open the live link on the phone and use **Add to Home Screen** — `manifest.json`
 makes it launch fullscreen in portrait with no browser chrome, like an app.
 
-Deployment is automatic: `.github/workflows/pages.yml` publishes the repository
-root to GitHub Pages on every push to the default branch.
+GitHub Pages serves the repository root, so every push updates the live game.
 
 ## Files
 
@@ -55,6 +59,6 @@ root to GitHub Pages on every push to the default branch.
 - `manifest.json` — PWA metadata for home-screen install
 - `icon.svg` — app icon
 - `preview.png` — link preview shown when the URL is pasted into a chat
-- `.github/workflows/pages.yml` — publishes the site to GitHub Pages
+- `.nojekyll` — tells GitHub Pages to serve the files as-is
 
 A fan project, made for fun. Not affiliated with Super Junior, Label SJ or SM Entertainment.
