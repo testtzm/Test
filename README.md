@@ -1,10 +1,20 @@
-# Heenim Catch 💙
+# Heechul fan games 💙
 
-A one-thumb arcade game for Super Junior's Kim Heechul — catch the sapphire pearls
-the ELF ocean throws up on stage, and dodge the 5AM schedules.
+Two one-thumb arcade games for Super Junior's Kim Heechul. Each is a single
+self-contained HTML file: no build step, no dependencies, no server needed.
+Open the file and play.
 
-Built as a single self-contained `index.html`: no build step, no dependencies,
-no server needed. Open the file and play.
+| Game | File | Live |
+|---|---|---|
+| **Heenim Catch** — catch the sapphire pearls, dodge the 5AM schedules | `index.html` | https://testtzm.github.io/Test/ |
+| **Heenim Tap Rush** — 45 seconds, tap Heechul, never wake the sleeping one | `tap-rush/index.html` | https://testtzm.github.io/Test/tap-rush/ |
+
+---
+
+# Heenim Catch
+
+Catch the sapphire pearls the ELF ocean throws up on stage, and dodge the 5AM
+schedules.
 
 ## How to play
 
@@ -53,9 +63,19 @@ makes it launch fullscreen in portrait with no browser chrome, like an app.
 
 GitHub Pages serves the repository root, so every push updates the live game.
 
+## Heenim Tap Rush
+
+A 45-second reaction game on a 3×3 stage of lightstick rings. Tap Heechul as he
+pops up, grab Heebum and Kibok for bonuses, catch the gold rings for duo combos —
+and never tap the sleeping member. Keep a nickname, chase your best score, and
+share a score card when the timer runs out.
+
+Same deal: one file, `tap-rush/index.html`, open and play.
+
 ## Files
 
-- `index.html` — the whole game: styles, canvas renderer, game loop, WebAudio SFX
+- `index.html` — Heenim Catch: styles, canvas renderer, game loop, WebAudio SFX
+- `tap-rush/index.html` — Heenim Tap Rush, self-contained
 - `manifest.json` — PWA metadata for home-screen install
 - `icon.svg` — app icon
 - `preview.png` — link preview shown when the URL is pasted into a chat
